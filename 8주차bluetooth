@@ -1,0 +1,24 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial myBt(2,3);
+
+void setup(){
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  myBt.begin(9600);
+}
+
+void loop() {
+  // put yor main code here, to run repeatedly:
+  if(Serial.available())
+  {
+    myBt.write(Serial.read());
+  }
+
+  if(myBt.available())
+  {
+    
+   Serial.write(myBt.read());
+  }
+    
+}
