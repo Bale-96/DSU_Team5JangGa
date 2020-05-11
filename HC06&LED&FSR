@@ -1,0 +1,36 @@
+#include <SoftwareSerial.h>
+SoftwareSerial btSerial(7,8);
+
+int ledPin = 13;       
+int sensor = A0;    //A0에 읽어오는 신호(압력센서)?
+int sensorValue;
+
+ 
+void setup()
+{
+  Serial.begin(9600);
+  btSerial.begin(9600);
+  pinMode(ledPin = 13, OUTPUT);
+  } 
+
+ 
+
+void loop()
+{
+  sensorValue = analogRead(sensor);        //sensorValue 값을 아날로그신호(sensor)로 정의
+
+                                                            
+  btSerial.println(sensorValue);                //sensorValue값 (A0신호) 블루투스모니터 출력
+  delay(100);                                        //1초에 한번씩 읽어오기
+
+                                                                 
+
+  if(sensorValue>150){ 
+    digitalWrite(ledPin, HIGH);
+    }
+  else{
+    digitalWrite(ledPin, LOW);
+  }
+
+
+}
