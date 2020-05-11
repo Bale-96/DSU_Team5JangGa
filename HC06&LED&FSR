@@ -21,7 +21,7 @@ void loop()
 
                                                             
   btSerial.println(sensorValue);                //sensorValue값 (A0신호) 블루투스모니터 출력
-  delay(100);                                        //1초에 한번씩 읽어오기
+  delay(0);                                        //센서가 감지하지 않았을때 0의 주기로 계속 led가 (1)의 값을 나타냄
 
                                                                  
 
