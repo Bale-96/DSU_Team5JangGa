@@ -1,20 +1,20 @@
 #include <SoftwareSerial.h>
 //블루투스 모듈 (HC06) 설정하기
-SoftwareSerial KHWSerial(2, 3); //블루투스 객체 선언 (Tx, Rx)
+SoftwareSerial MUSTSerial(2, 3); //블루투스 객체 선언 (Tx, Rx)
 
 void setup() {
   Serial.begin(9600); //시리얼 모니터 시작 (통신속도)
-  KHWSerial.begin(9600); //블루투스 통신 시작 (통신속도)
+  MUSTSerial.begin(9600); //블루투스 통신 시작 (통신속도)
 }
  
 void loop() {
-  if(KHWSerial.available()){
+  if(MUSTSerial.available()){
     //시리얼모니터에 입력된 데이터를 블루투스 통신이 읽어옴
-    Serial.write(KHWSerial.read());
+    Serial.write(MUSTSerial.read());
   }
   //시리얼 모니터 통신이 사용되면?
   if(Serial.available()){
     //블루투스에 입력된 데이터를 시리얼 모니터가 읽어옴
-    KHWSerial.write(Serial.read());
+    MUSTSerial.write(Serial.read());
   }
 }
