@@ -1,0 +1,119 @@
+#include <Adafruit_VC0706.h>
+#include <Arduino.h>
+#include <SD.h>
+#include <SPI.h>
+#include <SoftwareSerial.h>
+
+SoftwareSerial cameraconnection = SoftwareSerial(2, 3);
+SoftwareSerial btSerial(7,8);
+
+int sensor = A0;    
+int sensorValue;
+
+Adafruit_VC0706 cam = Adafruit_VC0706(&cameraconnection);
+
+void setup() {
+    pinMode(10, OUTPUT);      
+    pinMode(A0, INPUT_PULLUP);  
+
+    Serial.begin(9600);
+     btSerial.begin(9600);
+    Serial.println("VC0706 카메라 - SD카드 저장 예제");
+
+    if (!SD.begin(10)) {
+        Serial.println("SD카드 인식 실패");
+        return;
+    }
+    
+    if (cam.begin()) {
+        Serial.println("카메라 인식됨");
+    } else {
+        Serial.println("카메라 인식되지 않음");
+        return;
+    }
+
+    /* char *reply = cam.getVersion();
+    if (reply == 0) {
+        Serial.print("Failed to get version");
+    } else {
+        Serial.println("-----------------");
+        Serial.print(reply);
+        Serial.println("-----------------");
+    } */
+
+    cam.setImageSize(VC0706_640x480);
+    // cam.setImageSize(VC0706_320x240);
+    // cam.setImageSize(VC0706_160x120);
+  
+    /* uint8_t imgsize = cam.getImageSize();
+    Serial.print("설정된 크기: ");
+    if (imgsize == VC0706_640x480) Serial.println("640x480");
+    if (imgsize == VC0706_320x240) Serial.println("320x240");
+    if (imgsize == VC0706_160x120) Serial.println("160x120"); */
+}
+
+void loop() {
+  
+  sensorValue = analogRead(sensor);      
+                                                            
+  btSerial.println(sensorValue);                
+  if(sensorValue>200){ 
+    btSerial.println( " 눌림 " );
+camera_act();
+    }
+  else{
+    btSerial.println( " 안눌림 " );
+  }
+                                                                 
+
+    if (!digitalRead(9)) {
+        Serial.println("3초 뒤 사진을 촬영합니다...");
+        delay(3000);
+
+        if (!cam.takePicture())
+            Serial.println("촬용 오류!");
+        else
+            Serial.println("촬영 성공!");
+
+        char filename[13];  
+        strcpy(filename,
+               "IMAGE00.JPG"); 
+ 
+        for (int i = 0; i < 100; i++) {
+            filename[5] = '0' + i / 10;
+            filename[6] = '0' + i % 10;
+            if (!SD.exists(
+                    filename)) {  
+                        break;
+            }
+        }
+
+        File imgFile = SD.open(filename, FILE_WRITE);
+
+ 
+        uint16_t jpglen = cam.frameLength();
+        Serial.print("용량: ");
+        Serial.print(jpglen, DEC);
+        Serial.print(" byte, 저장중");
+
+        int32_t time = millis();  
+                                 
+        byte wCount = 0;
+        while (jpglen > 0) {
+            uint8_t *buffer;
+            uint8_t bytesToRead = min(32, jpglen);
+            buffer = cam.readPicture(bytesToRead);
+            imgFile.write(buffer, bytesToRead);
+            if (++wCount >= 64) {
+                Serial.print('.');
+                wCount = 0;
+            }
+            jpglen -= bytesToRead;
+        }
+        imgFile.close();  
+        time = millis() - time;  
+        Serial.println("저장완료!");
+        Serial.print(time);
+        Serial.println(" ms 소요됨");
+    }
+}
