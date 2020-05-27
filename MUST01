@@ -1,0 +1,165 @@
+#include <Adafruit_VC0706.h>
+#include <Arduino.h>
+#include <SD.h>
+#include <SPI.h>
+#include <SoftwareSerial.h>
+
+#define IN_FSR	0			// A0 FSR 입력
+#define CS		10			// microSD Card CS
+
+/* Connection
+	- microSD Card -
+	Arduino		microSD
+	10			CS
+	11			MOSI
+	12			MISO
+	13			SCK
+	
+	- Bluetooth -
+	Arduino		Bluetooth
+	7			TXD
+	8			RXD
+	
+	- TTL Serial cameraera -
+	Arduino		Bluetooth
+	2			TXD
+	3			RXD
+	
+	- FSR -
+	Arduino		FSR
+	A0			
+*/
+
+SoftwareSerial cameraconnection = SoftwareSerial(2, 3);		// Rx, Tx, TTL Serial camera
+SoftwareSerial bluetooth = SoftwareSerial(7, 8);
+Adafruit_VC0706 camera = Adafruit_VC0706(&cameraconnection);
+
+int sensorValue;			// FSR 값
+uint8_t checkFSR;			// 일정 압력 이상 눌렸는지 확인
+uint8_t checkSave;			// 사진 저장 중인지 확인
+
+void setup() {
+    pinMode(CS, OUTPUT);       // SD카드 모듈 SELECT 신호
+
+    Serial.begin(9600);
+	bluetooth.begin(9600);
+
+    // SD카드 모듈이 정상적으로 인식되는지, SD카드가 연결되었는지 확인하고
+    // 초기화합니다.
+    if (!SD.begin(CS)) {
+        Serial.println("SD카드 인식 실패");
+        return;
+    }
+
+    // 카메라 모듈이 정상적으로 인식되는지 확인하고 초기화합니다.
+    if (camera.begin()) {
+        Serial.println("카메라 인식됨");
+    } else {
+        Serial.println("카메라 인식되지 않음");
+        return;
+    }
+
+    // 카메라에 관련된 정보를 출력할 수 있습니다. (옵션)
+    /* char *reply = camera.getVersion();
+    if (reply == 0) {
+        Serial.print("Failed to get version");
+    } else {
+        Serial.println("-----------------");
+        Serial.print(reply);
+        Serial.println("-----------------");
+    } */
+
+    // 저장할 사진의 크기를 설정합니다. 사진의 크기가 커지면 SD카드에 저장하는
+    // 시간이 길어집니다.
+    camera.setImageSize(VC0706_640x480);
+    // camera.setImageSize(VC0706_320x240);
+    // camera.setImageSize(VC0706_160x120);
+
+    // 카메라에 설정된 사진의 크기를 읽을 수 있습니다. (옵션)
+    /* uint8_t imgsize = camera.getImageSize();
+    Serial.print("설정된 크기: ");
+    if (imgsize == VC0706_640x480) Serial.println("640x480");
+    if (imgsize == VC0706_320x240) Serial.println("320x240");
+    if (imgsize == VC0706_160x120) Serial.println("160x120"); */
+}
+
+void loop() {  
+	sensorValue = analogRead(IN_FSR);		// sensorValue 값을 아날로그신호(sensor)로 정의
+
+	if(sensorValue > 300) { 
+		bluetooth.println(" 눌림 ");
+        bluetooth.println(sensorValue);
+		checkFSR = 1;
+    } else {
+		checkFSR = 0;
+        return;
+	}
+
+    if (checkFSR == 1 && checkSave == 0) {		// FSR > 300 and 사진 저장 중이 아닐 때
+        // 사진을 촬영하며 반환값으로 촬영이 성공하였는지 확인합니다. 성공하면
+        // True, 실패하면 False 입니다.
+        if (!camera.takePicture()) {
+            Serial.println("촬영 실패!");
+            checkFSR = 0;
+			checkSave = 0;
+            return;
+		} else {
+            Serial.println("촬영 성공!");
+			checkSave = 1;
+		}
+
+		if (checkSave == 1) {
+			// 촬영한 사진을 IMAGExx.JPG 형식으로 SD카드에 저장하기 위해 이름을
+			// 정합니다.
+			char filename[13];					// 파일 이름을 저장할 배열 선언
+			strcpy(filename, "IMAGE000.JPG");	// 파일 이름을 IMAGE000.JPG로 설정한 후 1씩 증가
+			for (int i = 0; i < 1000; i++) {
+				filename[5] = '0' + i / 100;
+				filename[6] = '0' + i / 10 % 10;
+				filename[7] = '0' + i % 10;
+				if (!SD.exists(filename)) {		// 만약 filename에 해당하는 이름이 존재하지
+												// 않는다면 더 이상 올리지 않습니다.
+					break;
+				}
+			}
+
+			// 파일을 저장하기 위해 Open 모드로 SD카드를 실행합니다.
+			File imgFile = SD.open(filename, FILE_WRITE);
+
+			// 저장할 사진의 용량을 계산하고 시리얼 모니터에 출력합니다. byte 단위
+			uint16_t jpglen = camera.frameLength();
+			Serial.print("용량: ");
+			Serial.print(jpglen, DEC);
+			Serial.print(" byte, 저장중");
+            bluetooth.println(" 저장중 ");
+
+			// SD카드에 파일을 저장합니다.
+			int32_t time = millis();  	// 저장하는데 걸린 시간을 계산하기 위해 저장
+										// 전 시간을 체크합니다.
+			byte wCount = 0;
+			while (jpglen > 0) {
+				uint8_t *buffer;
+				uint8_t bytesToRead = min(32, jpglen);
+				buffer = camera.readPicture(bytesToRead);
+				imgFile.write(buffer, bytesToRead);
+				if (++wCount >= 64) {
+					Serial.print('.');
+					wCount = 0;
+				}
+				jpglen -= bytesToRead;
+			}
+			imgFile.close();			// 파일 저장이 끝났기 때문에 파일을 종료합니다.
+            checkFSR = 0;
+			checkSave = 0;
+
+			time = millis() - time;		// 저장에 걸린 시간을 계산합니다.
+			Serial.println("저장완료!");
+			Serial.print(time);
+			Serial.println(" ms 소요됨");
+			
+            bluetooth.println(" 저장완료 ");
+            bluetooth.print(time);
+            bluetooth.println(" ms 소요됨 ");
+		}
+    }
+}
