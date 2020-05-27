@@ -47,7 +47,7 @@ void setup() {
     // SD카드 모듈이 정상적으로 인식되는지, SD카드가 연결되었는지 확인하고
     // 초기화합니다.
     if (!SD.begin(CS)) {
-        Serial.println("SD카드 인식 실패");
+      //  Serial.println("SD카드 인식 실패");
         return;
     }
 
@@ -55,14 +55,14 @@ void setup() {
     if (camera.begin()) {
         Serial.println("카메라 인식됨");
     } else {
-        Serial.println("카메라 인식되지 않음");
+   //     Serial.println("카메라 인식되지 않음");
         return;
     }
 
     // 카메라에 관련된 정보를 출력할 수 있습니다. (옵션)
     /* char *reply = camera.getVersion();
     if (reply == 0) {
-        Serial.print("Failed to get version");
+      //  Serial.print("Failed to get version");
     } else {
         Serial.println("-----------------");
         Serial.print(reply);
@@ -77,7 +77,7 @@ void setup() {
 
     // 카메라에 설정된 사진의 크기를 읽을 수 있습니다. (옵션)
     /* uint8_t imgsize = camera.getImageSize();
-    Serial.print("설정된 크기: ");
+  //  Serial.print("설정된 크기: ");
     if (imgsize == VC0706_640x480) Serial.println("640x480");
     if (imgsize == VC0706_320x240) Serial.println("320x240");
     if (imgsize == VC0706_160x120) Serial.println("160x120"); */
@@ -99,12 +99,12 @@ void loop() {
         // 사진을 촬영하며 반환값으로 촬영이 성공하였는지 확인합니다. 성공하면
         // True, 실패하면 False 입니다.
         if (!camera.takePicture()) {
-            Serial.println("촬영 실패!");
+      //      Serial.println("촬영 실패!");
             checkFSR = 0;
 			checkSave = 0;
             return;
 		} else {
-            Serial.println("촬영 성공!");
+      //      Serial.println("촬영 성공!");
 			checkSave = 1;
 		}
 
@@ -128,9 +128,9 @@ void loop() {
 
 			// 저장할 사진의 용량을 계산하고 시리얼 모니터에 출력합니다. byte 단위
 			uint16_t jpglen = camera.frameLength();
-			Serial.print("용량: ");
-			Serial.print(jpglen, DEC);
-			Serial.print(" byte, 저장중");
+			//Serial.print("용량: ");
+			//Serial.print(jpglen, DEC);
+			//Serial.print(" byte, 저장중");
             bluetooth.println(" 저장중 ");
 
 			// SD카드에 파일을 저장합니다.
