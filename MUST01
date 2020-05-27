@@ -53,7 +53,7 @@ void setup() {
 
     // 카메라 모듈이 정상적으로 인식되는지 확인하고 초기화합니다.
     if (camera.begin()) {
-        Serial.println("카메라 인식됨");
+       // Serial.println("카메라 인식됨");
     } else {
    //     Serial.println("카메라 인식되지 않음");
         return;
@@ -64,9 +64,9 @@ void setup() {
     if (reply == 0) {
       //  Serial.print("Failed to get version");
     } else {
-        Serial.println("-----------------");
-        Serial.print(reply);
-        Serial.println("-----------------");
+       // Serial.println("-----------------");
+       // Serial.print(reply);
+       // Serial.println("-----------------");
     } */
 
     // 저장할 사진의 크기를 설정합니다. 사진의 크기가 커지면 SD카드에 저장하는
